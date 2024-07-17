@@ -15,7 +15,7 @@ Cold Email Filter
 - **Cold Email Detection**: Uses predefined keywords and phrases to classify emails.
 - **Domain Age Check**: Checks if the domain is under 2 years old.
 - **Whitelist Management**: Maintains a whitelist of safe domains in Supabase.
-- **OpenAI Integration**: Analyzes email content using OpenAI's GPT-3.
+- **OpenAI Integration**: Analyzes email content using OpenAI's GPT-3, for cost control.
 - **Logging**: Logs all actions and analysis results.
 
 ## 📝 Prerequisites

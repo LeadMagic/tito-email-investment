@@ -1,4 +1,9 @@
-# 📧 Cold Email Filter with Domain Age Check
+# 📧 The Ultimate Cold Email Filter with Domain Age Check
+
+Cost:
+
+API-Ninjas is $15/mo
+Host the Python Script on Vercel, Fly, Railway (most likely for free)
 
 This Python script checks your Gmail inbox for cold emails and moves them to the promotions folder if the sending domain is under 2 years old and not whitelisted in the Supabase database. It uses the Gmail API, OpenAI for email content analysis, and API Ninjas for WHOIS lookup. The script logs all actions and provides a comprehensive email filtering solution.
 

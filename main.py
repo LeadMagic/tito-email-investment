@@ -10,12 +10,19 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 import httpx
 import openai
+import asyncio
 
 # If modifying these SCOPES, delete the file token.json.
 SCOPES = ['https://www.googleapis.com/auth/gmail.modify']
 
 # Set up logging
 logging.basicConfig(level=logging.DEBUG, filename='gmail_cold_email_filter.log', filemode='w', format='%(name)s - %(levelname)s - %(message)s')
+
+class Email:
+    def __init__(self, subject, body, sender):
+        self.subject = subject
+        self.body = body
+        self.sender = sender
 
 def authenticate_gmail():
     """Shows basic usage of the Gmail API.
@@ -40,6 +47,42 @@ def get_emails(service):
     messages = results.get('messages', [])
     return messages
 
+def classify_email(email):
+    cold_email_keywords = [
+        "offer", "services", "solutions", "boost your business", "scale your product",
+        "expert developers", "top-notch digital marketing", "business growth",
+        "job opportunity", "exciting role", "came across your profile", "recruitment",
+        "investment opportunity", "interested in discussing", "potential investment", "analyst at"
+    ]
+
+    legitimate_phrases = [
+        "great meeting you at", "thanks for your help with",
+        "question about your product", "issue with",
+        "monthly newsletter", "latest updates from",
+        "password reset request", "welcome to", "purchase receipt from"
+    ]
+
+    # Initialize score
+    confidence_score = 0
+
+    # Check for cold email keywords
+    for keyword in cold_email_keywords:
+        if keyword in email.body or keyword in email.subject:
+            confidence_score += 10  # Increase score for each cold email keyword found
+
+    # Check for legitimate phrases
+    for phrase in legitimate_phrases:
+        if phrase in email.body or phrase in email.subject:
+            confidence_score -= 20  # Decrease score for each legitimate phrase found
+
+    # Determine if email is cold
+    is_cold_email = confidence_score > 0
+
+    return {
+        "confidence_score": confidence_score,
+        "is_cold_email": is_cold_email
+    }
+
 def analyze_email(service, msg_id, openai_key, gpt_prompt):
     message = service.users().messages().get(userId='me', id=msg_id, format='raw').execute()
     msg_str = base64.urlsafe_b64decode(message['raw'].encode('ASCII'))
@@ -48,6 +91,10 @@ def analyze_email(service, msg_id, openai_key, gpt_prompt):
     email_from = mime_msg['from']
     email_subject = mime_msg['subject']
     email_body = mime_msg.get_payload()
+
+    email = Email(subject=email_subject, body=email_body, sender=email_from)
+
+    classification_result = classify_email(email)
 
     # Send email body to OpenAI for analysis
     openai.api_key = openai_key
@@ -58,11 +105,7 @@ def analyze_email(service, msg_id, openai_key, gpt_prompt):
     )
     analysis_result = response.choices[0].text.strip()
 
-    # Simple regex to check for cold email patterns
-    cold_email_patterns = [r'\bunsubscribe\b', r'\bnewsletter\b', r'\bfree trial\b']
-    if any(re.search(pattern, email_body, re.IGNORECASE) for pattern in cold_email_patterns):
-        return email_from, True, analysis_result
-    return email_from, False, analysis_result
+    return email_from, classification_result["is_cold_email"], analysis_result, classification_result["confidence_score"]
 
 def move_to_promotions(service, msg_id):
     service.users().messages().modify(
@@ -91,8 +134,8 @@ def main():
 
     for msg in messages:
         try:
-            email_from, is_cold_email, analysis_result = analyze_email(service, msg['id'], openai_key, gpt_prompt)
-            logging.info(f"Email from {email_from} analyzed. Cold email: {is_cold_email}. Analysis result: {analysis_result}")
+            email_from, is_cold_email, analysis_result, confidence_score = analyze_email(service, msg['id'], openai_key, gpt_prompt)
+            logging.info(f"Email from {email_from} analyzed. Cold email: {is_cold_email}. Confidence score: {confidence_score}. Analysis result: {analysis_result}")
 
             if is_cold_email:
                 move_to_promotions(service, msg['id'])

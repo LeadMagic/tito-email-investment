@@ -7,7 +7,7 @@ Host the Python Script on Vercel, Fly, Railway (most likely for free)
 
 This Python script checks your Gmail inbox for cold emails and moves them to the promotions folder if the sending domain is under 2 years old and not whitelisted in the Supabase database. It uses the Gmail API, OpenAI for email content analysis, and API Ninjas for WHOIS lookup. The script logs all actions and provides a comprehensive email filtering solution.
 
-![Cold Email Filter](https://images.unsplash.com/photo-1561408035-0a151962a284?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=MnwzNjUyOXwwfDF8c2VhcmNofDN8fGVtYWlsJTIwZmlsdGVyfGVufDB8fHx8MTY5MTI5NjUxNQ&ixlib=rb-1.2.1&q=80&w=1080)
+Cold Email Filter
 
 ## 🛠️ Features
 
